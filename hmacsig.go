@@ -5,7 +5,6 @@ import (
 	"crypto/sha1"
 	"encoding/hex"
 	"io/ioutil"
-	"log"
 	"net/http"
 )
 
@@ -71,7 +70,7 @@ func (xh *hmacSig) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	ehash := hash.Sum(nil)
 	esig := "sha1=" + hex.EncodeToString(ehash)
-	log.Println(esig, xSig)
+
 	if !hmac.Equal([]byte(esig), []byte(xSig)) {
 		http.Error(w, MsgFailedHMAC, http.StatusForbidden)
 		return
