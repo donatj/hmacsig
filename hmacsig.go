@@ -29,15 +29,15 @@ type hmacSig struct {
 	header string
 }
 
-// HMACSigOptions are the availible configuration options for HMACSig
-type HMACSigOptions struct {
+// Options are the availible configuration options for HMACSig
+type Options struct {
 	Header string
 }
 
-// HMACSig provides HMAC signature validating middleware.
+// Handler provides HMAC signature validating middleware.
 //
 // see: https://developer.github.com/webhooks/securing/
-func HMACSig(h http.Handler, secret string, options HMACSigOptions) http.Handler {
+func Handler(h http.Handler, secret string, options Options) http.Handler {
 	sig := &hmacSig{
 		h:      h,
 		secret: secret,

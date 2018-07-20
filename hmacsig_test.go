@@ -28,7 +28,7 @@ func TestInvalidHeaders(t *testing.T) {
 			t.Errorf("should not be executed")
 		})
 
-		xhs := HMACSig(x, tc.secret, HMACSigOptions{})
+		xhs := Handler(x, tc.secret, Options{})
 		xhs.ServeHTTP(rec, req)
 
 		res := rec.Result()
@@ -65,7 +65,7 @@ func TestValidHMAC(t *testing.T) {
 			w.Write([]byte(tc.msg))
 		})
 
-		xhs := HMACSig(x, tc.secret, HMACSigOptions{})
+		xhs := Handler(x, tc.secret, Options{})
 		xhs.ServeHTTP(rec, req)
 
 		res := rec.Result()
