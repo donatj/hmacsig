@@ -1,4 +1,4 @@
-package xhubsig
+package hmacsig
 
 import (
 	"crypto/hmac"
