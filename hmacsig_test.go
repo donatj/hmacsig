@@ -62,6 +62,16 @@ func TestValidHMAC(t *testing.T) {
 		rec := httptest.NewRecorder()
 
 		x := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			b, err := ioutil.ReadAll(r.Body)
+			if err != nil {
+				t.Error(err)
+			}
+
+			bs := string(b)
+			if bs != tc.body {
+				t.Errorf("expected read '%v'; got '%v'", tc.body, bs)
+			}
+
 			w.Write([]byte(tc.msg))
 		})
 
