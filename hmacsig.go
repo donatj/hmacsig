@@ -1,6 +1,7 @@
 package hmacsig
 
 import (
+	"bytes"
 	"crypto/hmac"
 	"crypto/sha1"
 	"encoding/hex"
@@ -75,6 +76,9 @@ func (xh *hmacSig) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, MsgFailedHMAC, http.StatusForbidden)
 		return
 	}
+
+	r.Body.Close()
+	r.Body = ioutil.NopCloser(bytes.NewBuffer(b))
 
 	xh.h.ServeHTTP(w, r)
 }
