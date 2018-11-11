@@ -1,3 +1,5 @@
+// Package hmacsig implements an HMAC Signature Validation HTTP Middleware
+// for use with the likes of GitHub Webhooks.
 package hmacsig
 
 import (
