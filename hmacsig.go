@@ -34,12 +34,15 @@ type hmacSig struct {
 
 // Options are the available configuration options for HMACSig
 type Options struct {
+	// The HTTP Header to read for the signature
 	Header string
 }
 
 // Handler provides HMAC signature validating middleware.
 //
 // see: https://developer.github.com/webhooks/securing/
+//
+// If no options.Header is provided, GithubSignatureHeader will be used.
 func Handler(h http.Handler, secret string, options Options) http.Handler {
 	sig := &hmacSig{
 		h:      h,
