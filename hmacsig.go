@@ -32,7 +32,7 @@ type hmacSig struct {
 	header string
 }
 
-// Options are the availible configuration options for HMACSig
+// Options are the available configuration options for HMACSig
 type Options struct {
 	Header string
 }
