@@ -11,6 +11,9 @@ import (
 	"net/http"
 )
 
+// Option sets an option of the passed JqMux
+type Option func(*hmacSig)
+
 const (
 	// GithubSignatureHeader is the default header used by GitHub for their
 	// WebHook signatures
@@ -30,12 +33,41 @@ type hmacSig struct {
 
 	secret string
 	header string
+
+	missingSignatureHandler http.Handler
+	verifyFailedHandler     http.Handler
 }
 
-// Options are the available configuration options for HMACSig
-type Options struct {
-	// The HTTP Header to read for the signature
-	Header string
+// OptionHeader configures the HTTP Header to read for the signature
+func OptionHeader(header string) Option {
+	return func(mux *hmacSig) {
+		mux.header = header
+	}
+}
+
+// OptionMissingSignatureHandler configures the http.Handler called on missing signature
+func OptionMissingSignatureHandler(handler http.Handler) Option {
+	return func(mux *hmacSig) {
+		mux.missingSignatureHandler = handler
+	}
+}
+
+// OptionVerifyFailedHandler configures the http.Handler called on
+// HMAC verification failure
+func OptionVerifyFailedHandler(handler http.Handler) Option {
+	return func(mux *hmacSig) {
+		mux.verifyFailedHandler = handler
+	}
+}
+
+// DefaultMissingSignatureHandler is the default response to a missing signature
+func DefaultMissingSignatureHandler(w http.ResponseWriter, r *http.Request) {
+	http.Error(w, MsgMissingSignature, http.StatusForbidden)
+}
+
+// DefaultVerifyFailedHandler is the default response to HMAC verification failing
+func DefaultVerifyFailedHandler(w http.ResponseWriter, r *http.Request) {
+	http.Error(w, MsgFailedHMAC, http.StatusForbidden)
 }
 
 // Handler provides HMAC signature validating middleware.
@@ -43,15 +75,18 @@ type Options struct {
 // see: https://developer.github.com/webhooks/securing/
 //
 // If no options.Header is provided, GithubSignatureHeader will be used.
-func Handler(h http.Handler, secret string, options Options) http.Handler {
+func Handler(h http.Handler, secret string, options ...Option) http.Handler {
 	sig := &hmacSig{
 		h:      h,
 		secret: secret,
 		header: GithubSignatureHeader,
+
+		missingSignatureHandler: http.HandlerFunc(DefaultMissingSignatureHandler),
+		verifyFailedHandler:     http.HandlerFunc(DefaultVerifyFailedHandler),
 	}
 
-	if options.Header != "" {
-		sig.header = options.Header
+	for _, option := range options {
+		option(sig)
 	}
 
 	return sig
@@ -67,7 +102,7 @@ func (xh *hmacSig) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	xSig := r.Header.Get(xh.header)
 
 	if xSig == "" {
-		http.Error(w, MsgMissingSignature, http.StatusForbidden)
+		xh.missingSignatureHandler.ServeHTTP(w, r)
 		return
 	}
 
@@ -78,7 +113,7 @@ func (xh *hmacSig) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	esig := "sha1=" + hex.EncodeToString(ehash)
 
 	if !hmac.Equal([]byte(esig), []byte(xSig)) {
-		http.Error(w, MsgFailedHMAC, http.StatusForbidden)
+		xh.verifyFailedHandler.ServeHTTP(w, r)
 		return
 	}
 

@@ -28,7 +28,7 @@ func TestInvalidHeaders(t *testing.T) {
 			t.Errorf("should not be executed")
 		})
 
-		xhs := Handler(x, tc.secret, Options{})
+		xhs := Handler(x, tc.secret)
 		xhs.ServeHTTP(rec, req)
 
 		res := rec.Result()
@@ -75,7 +75,7 @@ func TestValidHMAC(t *testing.T) {
 			w.Write([]byte(tc.msg))
 		})
 
-		xhs := Handler(x, tc.secret, Options{})
+		xhs := Handler(x, tc.secret)
 		xhs.ServeHTTP(rec, req)
 
 		res := rec.Result()
