@@ -11,7 +11,7 @@ import (
 	"net/http"
 )
 
-// Option sets an option of the passed JqMux
+// Option sets an option of the passed hmacSig
 type Option func(*hmacSig)
 
 const (
