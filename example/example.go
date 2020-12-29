@@ -12,7 +12,7 @@ func main() {
 		w.Write([]byte("success"))
 	})
 
-	s := hmacsig.Handler(h, "supersecret")
+	s := hmacsig.Handler256(h, "supersecret")
 
 	err := http.ListenAndServe(":8080", s)
 	if err != nil {
