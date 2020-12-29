@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"crypto/hmac"
 	"crypto/sha1"
+	"crypto/sha256"
 	"encoding/hex"
 	"io/ioutil"
 	"net/http"
@@ -16,8 +17,12 @@ type Option func(*hmacSig)
 
 const (
 	// GithubSignatureHeader is the default header used by GitHub for their
-	// WebHook signatures
+	// SHA-1 WebHook signatures
 	GithubSignatureHeader = "X-Hub-Signature"
+
+	// GithubSignatureHeader256 is the default header used by GitHub for their
+	// SHA-256 WebHook signatures
+	GithubSignatureHeader256 = "X-Hub-Signature-256"
 
 	// MsgMissingSignature is the message returned in the body when the
 	// Signature was missing from the request
@@ -36,6 +41,8 @@ type hmacSig struct {
 
 	missingSignatureHandler http.Handler
 	verifyFailedHandler     http.Handler
+
+	validator SignatureValidator
 }
 
 // OptionHeader configures the HTTP Header to read for the signature
@@ -57,6 +64,21 @@ func OptionMissingSignatureHandler(handler http.Handler) Option {
 func OptionVerifyFailedHandler(handler http.Handler) Option {
 	return func(mux *hmacSig) {
 		mux.verifyFailedHandler = handler
+	}
+}
+
+// OptionDefaultsSHA256 configures the HTTP Header and Validator used to the
+// defaults used by GitHub for SHA256 validation
+func OptionDefaultsSHA256(mux *hmacSig) {
+	mux.header = GithubSignatureHeader256
+	mux.validator = SHA256Validator
+}
+
+// OptionSignatureValidator configures the HMAC SignatureValidator
+// validated against
+func OptionSignatureValidator(validator SignatureValidator) Option {
+	return func(mux *hmacSig) {
+		mux.validator = validator
 	}
 }
 
@@ -83,6 +105,8 @@ func Handler(h http.Handler, secret string, options ...Option) http.Handler {
 
 		missingSignatureHandler: http.HandlerFunc(DefaultMissingSignatureHandler),
 		verifyFailedHandler:     http.HandlerFunc(DefaultVerifyFailedHandler),
+
+		validator: SHA1Validator,
 	}
 
 	for _, option := range options {
@@ -90,6 +114,42 @@ func Handler(h http.Handler, secret string, options ...Option) http.Handler {
 	}
 
 	return sig
+}
+
+// Handler256 provides HMAC signature validating middleware defaulting to SHA256.
+//
+// Handler256 is a convenience method which invokes Handler while including
+// OptionDefaultsSHA256 as the first Option
+func Handler256(h http.Handler, secret string, options ...Option) http.Handler {
+	return Handler(h, secret, append([]Option{OptionDefaultsSHA256}, options...)...)
+}
+
+// SignatureValidator validates the body of a request against the requests
+// signature and servers secret
+type SignatureValidator func(body []byte, sig, secret string) bool
+
+// SHA1Validator implements the interface SignatureValidator and
+// SHA-1 HMAC validation
+func SHA1Validator(body []byte, sig, secret string) bool {
+	hash := hmac.New(sha1.New, []byte(secret))
+	hash.Write(body)
+
+	ehash := hash.Sum(nil)
+	esig := "sha1=" + hex.EncodeToString(ehash)
+
+	return hmac.Equal([]byte(esig), []byte(sig))
+}
+
+// SHA256Validator implements the interface SignatureValidator and
+// SHA-256 HMAC validation
+func SHA256Validator(body []byte, sig, secret string) bool {
+	hash := hmac.New(sha256.New, []byte(secret))
+	hash.Write(body)
+
+	ehash := hash.Sum(nil)
+	esig := "sha256=" + hex.EncodeToString(ehash)
+
+	return hmac.Equal([]byte(esig), []byte(sig))
 }
 
 func (xh *hmacSig) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -106,13 +166,7 @@ func (xh *hmacSig) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	hash := hmac.New(sha1.New, []byte(xh.secret))
-	hash.Write(b)
-
-	ehash := hash.Sum(nil)
-	esig := "sha1=" + hex.EncodeToString(ehash)
-
-	if !hmac.Equal([]byte(esig), []byte(xSig)) {
+	if !xh.validator(b, xSig, xh.secret) {
 		xh.verifyFailedHandler.ServeHTTP(w, r)
 		return
 	}
