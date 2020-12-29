@@ -1,8 +1,8 @@
 # hmacsig
 
-[![Build Status](https://travis-ci.org/donatj/hmacsig.svg?branch=master)](https://travis-ci.org/donatj/hmacsig)
 [![GoDoc](https://godoc.org/github.com/donatj/hmacsig?status.svg)](https://godoc.org/github.com/donatj/hmacsig)
 [![Go Report Card](https://goreportcard.com/badge/github.com/donatj/hmacsig)](https://goreportcard.com/report/github.com/donatj/hmacsig)
+![CI](https://github.com/donatj/hmacsig/workflows/CI/badge.svg)
 
 HMAC Signature Validation Middleware (like GitHub Webhooks Uses)
 
