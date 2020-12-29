@@ -8,6 +8,10 @@ HMAC Signature Validation Middleware (like GitHub Webhooks Uses)
 
 Supports SHA-1 validation via `hmacsig.Handler` and SHA-256 validation via `hmacsig.Handler256`
 
+GitHub now recommends SHA-256 over SHA-1 - read more:
+
+https://docs.github.com/en/free-pro-team@latest/developers/webhooks-and-events/securing-your-webhooks
+
 ## Example
 
 ```golang
