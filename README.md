@@ -6,7 +6,9 @@
 
 HMAC Signature Validation Middleware (like GitHub Webhooks Uses)
 
-### Example
+Supports SHA-1 validation via `hmacsig.Handler` and SHA-256 validation via `hmacsig.Handler256`
+
+## Example
 
 ```golang
 package main
