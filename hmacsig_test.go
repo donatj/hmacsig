@@ -2,7 +2,7 @@ package hmacsig
 
 import (
 	"bytes"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -37,7 +37,7 @@ func TestInvalidHeaders(t *testing.T) {
 			t.Errorf("expected status Forbidden; got %v", res.Status)
 		}
 
-		body, _ := ioutil.ReadAll(res.Body)
+		body, _ := io.ReadAll(res.Body)
 		sbody := strings.TrimSpace(string(body))
 		if sbody != tc.msg {
 			t.Errorf("expected message '%v'; got '%v'", tc.msg, sbody)
@@ -68,7 +68,7 @@ func TestValidHMAC(t *testing.T) {
 		rec := httptest.NewRecorder()
 
 		x := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			b, err := ioutil.ReadAll(r.Body)
+			b, err := io.ReadAll(r.Body)
 			if err != nil {
 				t.Error(err)
 			}
@@ -90,7 +90,7 @@ func TestValidHMAC(t *testing.T) {
 			t.Errorf("expected status OK; got %v", res.Status)
 		}
 
-		body, _ := ioutil.ReadAll(res.Body)
+		body, _ := io.ReadAll(res.Body)
 		sbody := strings.TrimSpace(string(body))
 		if sbody != tc.msg {
 			t.Errorf("expected message '%v'; got '%v'", tc.msg, sbody)

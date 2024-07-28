@@ -8,7 +8,7 @@ import (
 	"crypto/sha1"
 	"crypto/sha256"
 	"encoding/hex"
-	"io/ioutil"
+	"io"
 	"net/http"
 )
 
@@ -153,7 +153,7 @@ func SHA256Validator(body []byte, sig, secret string) bool {
 }
 
 func (xh *hmacSig) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	b, err := ioutil.ReadAll(r.Body)
+	b, err := io.ReadAll(r.Body)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -172,7 +172,7 @@ func (xh *hmacSig) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	r.Body.Close()
-	r.Body = ioutil.NopCloser(bytes.NewBuffer(b))
+	r.Body = io.NopCloser(bytes.NewBuffer(b))
 
 	xh.h.ServeHTTP(w, r)
 }
